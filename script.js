@@ -69,7 +69,7 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
-
+const reset = document.querySelector('.reset');
 class App {
   #map;
   #mapEvent;
@@ -78,6 +78,7 @@ class App {
   constructor() {
     this._getPosition();
     this._getlocalStorage();
+    reset.addEventListener('click', this._reset);
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this)); // Add event listener for click on workouts
@@ -288,10 +289,14 @@ class App {
       this._renderWorkout(work);
     });
   }
-  reset() {
+
+  _reset(e) {
+    e.preventDefault();
     localStorage.removeItem('workout');
     location.reload();
   }
 }
-
 const app = new App();
+const b = 10;
+const a = 'my name is Mukhammadaziz';
+console.log(a && b);
