@@ -297,6 +297,3 @@ class App {
   }
 }
 const app = new App();
-const b = 10;
-const a = 'my name is Mukhammadaziz';
-console.log(a && b);
