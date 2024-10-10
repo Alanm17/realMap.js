@@ -297,3 +297,11 @@ class App {
   }
 }
 const app = new App();
+
+const jake = function (jakejan) {
+  const k = this + jakejan;
+  return k; // return doim berilish kerak
+};
+
+const binds = jake.bind(23);
+console.log(binds(34));
