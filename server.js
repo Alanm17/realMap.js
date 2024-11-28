@@ -1,116 +1,165 @@
 const express = require('express');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const bodyParser = require('body-parser');
+const cors = require('cors');
+
+// Use CORS middleware
+// app.use(cors());
 
 // Create an Express application
 const app = express();
 const PORT = 3000;
-
+app.use(cors());
 // Middleware
 app.use(bodyParser.json());
 
 // MySQL connection
 const db = mysql.createConnection({
   host: 'localhost',
-  user: 'root', // your username
-  password: 'your_password', // your MySQL password
-  database: 'workout_db', // your database name
+  user: 'root', // Your MySQL username
+  password: '', // Empty password
+  database: 'workout_db', // Your database name
 });
 
 // Connect to MySQL
 db.connect(err => {
   if (err) {
-    console.error('Error connecting to MySQL:', err);
-    return;
+    console.error('Error connecting to MySQL:', err.stack);
+    process.exit(1);
   }
-  console.log('Connected to MySQL');
+  console.log('Connected to MySQL', db.threadId);
 });
 
-// Create a new workout (POST)
+// POST: Add a new workout
 app.post('/workouts', (req, res) => {
-  const { type, distance, duration, cadence, elevationGain, lat, lng } =
-    req.body;
+  const {
+    user_id,
+    workout_name,
+    distance,
+    duration,
+    coords,
+    cadence,
+    elevation,
+    workout_date,
+  } = req.body;
 
-  // Input validation
-  if (!type || !distance || !duration || !lat || !lng) {
+  if (
+    !user_id ||
+    !workout_name ||
+    !distance ||
+    !duration ||
+    !coords ||
+    !workout_date
+  ) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const query = `INSERT INTO workouts (type, distance, duration, cadence, elevation_gain, lat, lng)
+  // Validate coords - Ensure it's an array of two numbers [lat, lng]
+  if (
+    !Array.isArray(coords) ||
+    coords.length !== 2 ||
+    !coords.every(Number.isFinite)
+  ) {
+    return res.status(400).json({
+      error:
+        'Invalid coordinates format. Expected an array of two numbers [lat, lng].',
+    });
+  }
+
+  // Running workout
+  if (workout_name === 'running') {
+    if (!cadence) {
+      return res
+        .status(400)
+        .json({ error: 'Cadence is required for running workouts' });
+    }
+    const query = `INSERT INTO workouts (user_id, workout_name, distance, duration, coords, cadence, workout_date) 
                    VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-  db.query(
-    query,
-    [type, distance, duration, cadence, elevationGain, lat, lng],
-    (err, results) => {
-      if (err) {
-        console.error('Error inserting workout:', err);
-        return res.status(500).json({ error: 'Failed to add workout' });
+    db.query(
+      query,
+      [
+        user_id,
+        workout_name,
+        distance,
+        duration,
+        JSON.stringify(coords), // Convert the coords to JSON format
+        cadence, // Include cadence for running
+        workout_date,
+      ],
+      (err, results) => {
+        if (err) {
+          console.error('Error inserting workout:', err);
+          return res.status(500).json({ error: 'Failed to add workout' });
+        }
+
+        const workoutId = results.insertId;
+        res.status(201).json({
+          message: 'Workout added',
+          workout: {
+            id: workoutId,
+            user_id,
+            workout_name,
+            distance,
+            duration,
+            coords,
+            cadence,
+            workout_date,
+          },
+        });
       }
-      res.status(201).json({ message: 'Workout added', id: results.insertId });
-    }
-  );
-});
-
-// Get all workouts (GET)
-app.get('/workouts', (req, res) => {
-  const query = 'SELECT * FROM workouts';
-
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error fetching workouts:', err);
-      return res.status(500).json({ error: 'Failed to fetch workouts' });
-    }
-    res.status(200).json(results);
-  });
-});
-
-// Update a workout (PUT)
-app.put('/workouts/:id', (req, res) => {
-  const id = req.params.id;
-  const { type, distance, duration, cadence, elevationGain, lat, lng } =
-    req.body;
-
-  // Input validation
-  if (!type || !distance || !duration || !lat || !lng) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    );
+    return; // Prevent further execution in this block after handling 'running'
   }
 
-  const query = `UPDATE workouts SET type = ?, distance = ?, duration = ?, cadence = ?, elevation_gain = ?, lat = ?, lng = ?
-                   WHERE id = ?`;
+  // Cycling workout
+  if (workout_name === 'cycling') {
+    if (!elevation) {
+      return res
+        .status(400)
+        .json({ error: 'Elevation is required for cycling workouts' });
+    }
+    const query = `INSERT INTO workouts (user_id, workout_name, distance, duration, coords, elevation, workout_date) 
+                   VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-  db.query(
-    query,
-    [type, distance, duration, cadence, elevationGain, lat, lng, id],
-    (err, results) => {
-      if (err) {
-        console.error('Error updating workout:', err);
-        return res.status(500).json({ error: 'Failed to update workout' });
+    db.query(
+      query,
+      [
+        user_id,
+        workout_name,
+        distance,
+        duration,
+        JSON.stringify(coords),
+        elevation,
+        workout_date,
+      ],
+      (err, results) => {
+        if (err) {
+          console.error('Error inserting workout:', err);
+          return res.status(500).json({ error: 'Failed to add workout' });
+        }
+
+        const workoutId = results.insertId;
+        res.status(201).json({
+          message: 'Workout added',
+          workout: {
+            id: workoutId,
+            user_id,
+            workout_name,
+            distance,
+            duration,
+            coords,
+            elevation,
+            workout_date,
+          },
+        });
       }
-      if (results.affectedRows === 0) {
-        return res.status(404).json({ error: 'Workout not found' });
-      }
-      res.status(200).json({ message: 'Workout updated' });
-    }
-  );
-});
+    );
+    return; // Prevent further execution in this block after handling 'cycling'
+  }
 
-// Delete a workout (DELETE)
-app.delete('/workouts/:id', (req, res) => {
-  const id = req.params.id;
-
-  const query = `DELETE FROM workouts WHERE id = ?`;
-
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      console.error('Error deleting workout:', err);
-      return res.status(500).json({ error: 'Failed to delete workout' });
-    }
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ error: 'Workout not found' });
-    }
-    res.status(200).json({ message: 'Workout deleted' });
-  });
+  // If workout_name is not 'running' or 'cycling'
+  return res.status(400).json({ error: 'Invalid workout name' });
 });
 
 // Start the server

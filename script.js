@@ -70,6 +70,7 @@ const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 const reset = document.querySelector('.reset');
+
 class App {
   #map;
   #mapEvent;
@@ -78,7 +79,7 @@ class App {
   constructor() {
     this._getPosition();
     this._getlocalStorage();
-    reset.addEventListener('click', this._reset);
+    reset.addEventListener('click', this._reset.bind(this));
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this)); // Add event listener for click on workouts
@@ -93,20 +94,32 @@ class App {
         }
       );
   }
-
   _loadMap(position) {
-    const { latitude } = position.coords;
-    const { longitude } = position.coords;
+    if (
+      !position ||
+      !position.coords ||
+      !position.coords.latitude ||
+      !position.coords.longitude
+    ) {
+      console.error('Invalid location data:', position);
+      return; // Exit the function if location data is invalid
+    }
+
+    const { latitude, longitude } = position.coords;
     const coords = [latitude, longitude];
 
-    this.#map = L.map('map').setView(coords, 13);
+    // Check if the map is already initialized to prevent reloading it
+    if (!this.#map) {
+      this.#map = L.map('map').setView(coords, 13);
 
-    L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(this.#map);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(this.#map);
 
-    this.#map.on('click', this._showForm.bind(this));
+      this.#map.on('click', this._showForm.bind(this));
+    }
+
     this.#workout.forEach(work => {
       this._renderWorkoutMarker(work);
     });
@@ -134,11 +147,10 @@ class App {
   }
 
   _newWorkout(e) {
+    e.preventDefault();
     const validInputs = (...inputs) =>
       inputs.every(inp => Number.isFinite(inp));
     const allPositive = (...inputs) => inputs.every(inp => inp > 0);
-
-    e.preventDefault();
 
     // Get data from form
     const type = inputType.value;
@@ -153,9 +165,9 @@ class App {
       if (
         !validInputs(distance, duration, cadence) ||
         !allPositive(distance, duration, cadence)
-      )
+      ) {
         return alert('Inputs have to be positive numbers!');
-
+      }
       workout = new Running([lat, lng], distance, duration, cadence);
     }
 
@@ -165,13 +177,12 @@ class App {
       if (
         !validInputs(distance, duration, elevation) ||
         !allPositive(distance, duration)
-      )
+      ) {
         return alert('Inputs have to be positive numbers!');
-
-      workout = new Cycling(distance, duration, [lat, lng], elevation); // Corrected order of arguments
+      }
+      workout = new Cycling(distance, duration, [lat, lng], elevation);
     }
 
-    // Add a new object to workout array
     this.#workout.push(workout);
 
     // Display the marker on the map
@@ -179,11 +190,52 @@ class App {
     // Render workout on the list
     this._renderWorkout(workout);
 
-    // Clear input fields
+    // adding to MySQL
+    fetch('http://localhost:3000/workouts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: 1, // Replace with dynamic user ID if applicable
+        workout_name: workout.type, // "running" or "cycling"
+        distance: workout.distance,
+        duration: workout.duration,
+        coords: workout.coords,
+        cadence: workout.type === 'running' ? workout.cadence : undefined, // Only for running
+        elevation:
+          workout.type === 'cycling' ? workout.elevationGain : undefined, // Only for cycling
+        workout_date: new Date().toISOString().split('T')[0], // Format: YYYY-MM-DD
+      }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Workout added:', data);
+      })
+      .catch(error => {
+        console.error('Error adding workout:', error);
+      });
+
+    // Clear input fields and hide the form
     this._hideForm();
     //set new local storage to all workouts
-    this._setLocalStorage();
+    _setLocalStorage();
     // get local storage
+    _getlocalStorage();
+    this._reset();
+  }
+  _setLocalStorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workout)); // Save the workouts array to localStorage
+  }
+
+  // Fetch workouts from localStorage on page load
+  _getlocalStorage() {
+    const data = JSON.parse(localStorage.getItem('workouts')); // Get workouts from localStorage
+    if (!data) return; // If no data, return early
+    this.#workout = data; // Assign the data to the workout array
+    this.#workout.forEach(work => {
+      this._renderWorkout(work); // Render each workout
+    });
   }
 
   _renderWorkoutMarker(workout) {
@@ -258,7 +310,7 @@ class App {
 
   _moveToPopup(e) {
     if (!this.#map) return;
-
+    // e.preventDefault();
     const workoutEl = e.target.closest('.workout');
 
     if (!workoutEl) return;
@@ -277,18 +329,6 @@ class App {
     // Uncomment if you want to use the click method
     // workout.click();
   }
-  _setLocalStorage() {
-    localStorage.setItem('workout', JSON.stringify(this.#workout));
-  }
-  _getlocalStorage() {
-    const data = JSON.parse(localStorage.getItem('workout'));
-    console.log(data);
-    if (!data) return;
-    this.#workout = data;
-    this.#workout.forEach(work => {
-      this._renderWorkout(work);
-    });
-  }
 
   _reset(e) {
     e.preventDefault();
@@ -297,11 +337,3 @@ class App {
   }
 }
 const app = new App();
-
-const jake = function (jakejan) {
-  const k = this + jakejan;
-  return k; // return doim berilish kerak
-};
-
-const binds = jake.bind(23);
-console.log(binds(34));
