@@ -152,14 +152,12 @@ class App {
       inputs.every(inp => Number.isFinite(inp));
     const allPositive = (...inputs) => inputs.every(inp => inp > 0);
 
-    // Get data from form
     const type = inputType.value;
     const distance = +inputDistance.value; // Convert to number
     const duration = +inputDuration.value;
     const { lat, lng } = this.#mapEvent.latlng;
     let workout;
 
-    // If running, create running object
     if (type === 'running') {
       const cadence = +inputCadence.value;
       if (
@@ -171,7 +169,6 @@ class App {
       workout = new Running([lat, lng], distance, duration, cadence);
     }
 
-    // If cycling, create cycling object
     if (type === 'cycling') {
       const elevation = +inputElevation.value;
       if (
@@ -185,27 +182,27 @@ class App {
 
     this.#workout.push(workout);
 
-    // Display the marker on the map
     this._renderWorkoutMarker(workout);
-    // Render workout on the list
-    this._renderWorkout(workout);
 
-    // adding to MySQL
+    this._renderWorkout(workout);
+    const now = new Date();
+    const ID = now.getSeconds();
+    // connection with backend . in this i added all needed data and also added time to be more specific
     fetch('http://localhost:3000/workouts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        user_id: 1, // Replace with dynamic user ID if applicable
-        workout_name: workout.type, // "running" or "cycling"
+        user_id: ID,
+        workout_name: workout.type,
         distance: workout.distance,
         duration: workout.duration,
         coords: workout.coords,
-        cadence: workout.type === 'running' ? workout.cadence : undefined, // Only for running
+        cadence: workout.type === 'running' ? workout.cadence : undefined,
         elevation:
-          workout.type === 'cycling' ? workout.elevationGain : undefined, // Only for cycling
-        workout_date: new Date().toISOString().split('T')[0], // Format: YYYY-MM-DD
+          workout.type === 'cycling' ? workout.elevationGain : undefined,
+        workout_date: new Date().toISOString().split('T')[0],
       }),
     })
       .then(response => response.json())
