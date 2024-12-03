@@ -3,25 +3,19 @@ const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-// Use CORS middleware
-// app.use(cors());
-
-// Create an Express application
 const app = express();
 const PORT = 3000;
 app.use(cors());
-// Middleware
+
 app.use(bodyParser.json());
 
-// MySQL connection
 const db = mysql.createConnection({
   host: 'localhost',
-  user: 'root', // Your MySQL username
-  password: '', // Empty password
-  database: 'workout_db', // Your database name
+  user: 'root',
+  password: '',
+  database: 'workout_db',
 });
 
-// Connect to MySQL
 db.connect(err => {
   if (err) {
     console.error('Error connecting to MySQL:', err.stack);
@@ -30,7 +24,6 @@ db.connect(err => {
   console.log('Connected to MySQL', db.threadId);
 });
 
-// POST: Add a new workout
 app.post('/workouts', (req, res) => {
   const {
     user_id,
@@ -54,7 +47,6 @@ app.post('/workouts', (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Validate coords - Ensure it's an array of two numbers [lat, lng]
   if (
     !Array.isArray(coords) ||
     coords.length !== 2 ||
@@ -66,7 +58,6 @@ app.post('/workouts', (req, res) => {
     });
   }
 
-  // Running workout
   if (workout_name === 'running') {
     if (!cadence) {
       return res
@@ -83,8 +74,8 @@ app.post('/workouts', (req, res) => {
         workout_name,
         distance,
         duration,
-        JSON.stringify(coords), // Convert the coords to JSON format
-        cadence, // Include cadence for running
+        JSON.stringify(coords),
+        cadence,
         workout_date,
       ],
       (err, results) => {
@@ -109,7 +100,6 @@ app.post('/workouts', (req, res) => {
         });
       }
     );
-    return; // Prevent further execution in this block after handling 'running'
   }
 
   // Cycling workout
@@ -155,14 +145,11 @@ app.post('/workouts', (req, res) => {
         });
       }
     );
-    return; // Prevent further execution in this block after handling 'cycling'
   }
 
-  // If workout_name is not 'running' or 'cycling'
   return res.status(400).json({ error: 'Invalid workout name' });
 });
 
-// Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

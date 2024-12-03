@@ -213,25 +213,22 @@ class App {
         console.error('Error adding workout:', error);
       });
 
-    // Clear input fields and hide the form
     this._hideForm();
-    //set new local storage to all workouts
+
     _setLocalStorage();
-    // get local storage
+
     _getlocalStorage();
     this._reset();
   }
   _setLocalStorage() {
-    localStorage.setItem('workouts', JSON.stringify(this.#workout)); // Save the workouts array to localStorage
+    localStorage.setItem('workouts', JSON.stringify(this.#workout));
   }
-
-  // Fetch workouts from localStorage on page load
   _getlocalStorage() {
-    const data = JSON.parse(localStorage.getItem('workouts')); // Get workouts from localStorage
+    const data = JSON.parse(localStorage.getItem('workouts'));
     if (!data) return; // If no data, return early
-    this.#workout = data; // Assign the data to the workout array
+    this.#workout = data;
     this.#workout.forEach(work => {
-      this._renderWorkout(work); // Render each workout
+      this._renderWorkout(work);
     });
   }
 
@@ -322,8 +319,6 @@ class App {
         duration: 1,
       },
     });
-
-    // Uncomment if you want to use the click method
     // workout.click();
   }
 
