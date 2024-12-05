@@ -113,7 +113,7 @@ class App {
 
         //if the map is already initialized to prevent reloading it 👇
         if (!this.#map) {
-            this.#map = L.map('map').setView(coords, 13)
+            this.#map = L.map('map').setView(coords, 14)
 
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution:
@@ -129,7 +129,7 @@ class App {
     }
 
     _showForm(mapE) {
-        this.#mapEvent = mapE // Save the map event
+        this.#mapEvent = mapE /// mapEvent is the property of leaflet map to get the current location data when clicked
         form.classList.remove('hidden')
         inputDistance.focus()
     }
