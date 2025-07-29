@@ -19,5 +19,29 @@ This is a full-stack dynamic map application built using **Node.js**, **Express.
 - **Others:** RESTful APIs, Fetch for frontend requests
 
 
+## 🚀 Features
 
+- Interactive map rendered in the browser
+- Node.js backend to serve static files and handle data
+- Clean frontend UI with custom styles
+- Prettier integration for consistent code formatting
+- GitHub Actions workflow ready for CI/CD
 
+## 🧰 Technologies Used
+
+- **Frontend:** HTML, CSS, Vanilla JavaScript
+- **Backend:** Node.js, Express
+- **Package Manager:** npm
+- **Build Tool (optional):** Parcel.js (based on `.parcel-cache`)
+- **Version Control:** Git & GitHub
+- **CI/CD:** GitHub Actions (`.github/workflows/`)
+
+## 🧪 Setup Instructions
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Alanm17/dynamic-map-app.git
+cd dynamic-map-app
+npm install
+node server.js
