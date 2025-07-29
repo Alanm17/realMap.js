@@ -41,7 +41,7 @@ This is a full-stack dynamic map application built using **Node.js**, **Express.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Alanm17/dynamic-map-app.git
+git clone https://github.com/Alanm17/realMap.js.git
 cd dynamic-map-app
 npm install
 node server.js
